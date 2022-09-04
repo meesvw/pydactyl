@@ -1,2 +1,2 @@
 # pydactyl
-Simple API wrapper for the Pterodactyl panel
+Simple API wrapper written in Python for the Pterodactyl panel
