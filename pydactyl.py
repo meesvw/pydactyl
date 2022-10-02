@@ -1,5 +1,33 @@
-from requests import request
+import asyncio
+import aiohttp
 from json import dumps
+
+
+class Client:
+    def __init__(self, url: str, api_key: str):
+        self.url = url + '/api/client/'
+        self.headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+
+    """
+    Account endpoints
+    """
+    async def account(self):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'account'
+            return await (await session.get(url)).json()
+
+    """
+    Server endpoints
+    """
+    async def power(self, identifier: str, signal: str):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            payload = {'signal': signal}
+            url = self.url + 'servers/' + identifier + '/power'
+            return await (await session.post(url, data=dumps(payload))).json()
 
 
 class Application:
@@ -14,16 +42,22 @@ class Application:
     """
     User endpoints
     """
-    def get_users(self):
-        return request('GET', self.url + 'users/', headers=self.headers).json()['data']
+    async def get_users(self):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'users/'
+            return await (await session.get(url)).json()
 
-    def get_user(self, user_id: int):
-        return request('GET', self.url + 'users/' + str(user_id), headers=self.headers).json()
+    async def get_user(self, user_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'users/' + str(user_id)
+            return await (await session.get(url)).json()
 
-    def get_users_external(self, external_id: str):
-        return request('GET', self.url + 'users/external/' + external_id, headers=self.headers)
+    async def get_users_external(self, external_id: str):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'users/external/' + external_id
+            return await (await session.get(url)).json()
 
-    def update_user(
+    async def update_user(
             self,
             user_id: int,
             email: str = None,
@@ -53,12 +87,16 @@ class Application:
         if password:
             payload['password'] = password
 
-        return request('PATCH', self.url + 'users/' + str(user_id), data=dumps(payload), headers=self.headers)
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'users/' + str(user_id)
+            return await (await session.patch(url, data=dumps(payload))).json()
 
-    def delete_user(self, user_id: int):
-        return request('DELETE', self.url + 'users/' + str(user_id), headers=self.headers).json()
+    async def delete_user(self, user_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'users/' + str(user_id)
+            return await (await session.delete(url)).json()
 
-    def create_user(
+    async def create_user(
             self, email: str, username: str, first_name: str, last_name: str, admin: bool = False, password: str = None
     ):
         payload = {
@@ -74,18 +112,24 @@ class Application:
         if admin:
             payload['root_admin'] = True
 
-        return request('POST', self.url + 'users', data=dumps(payload), headers=self.headers).json()
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'users'
+            return await (await session.post(url, data=dumps(payload))).json()
 
     """
     Nodes endpoints
     """
-    def get_nodes(self):
-        return request('GET', self.url + 'nodes', headers=self.headers).json()
+    async def get_nodes(self):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nodes'
+            return await (await session.get(url)).json()
 
-    def get_node_configuration(self, node_id: int):
-        return request('GET', self.url + 'nodes/' + str(node_id) + '/configuration', headers=self.headers).json()
+    async def get_node_configuration(self, node_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nodes/' + str(node_id) + '/configuration'
+            return await (await session.get(url)).json()
 
-    def create_node(
+    async def create_node(
             self,
             name: str,
             location_id: int,
@@ -112,9 +156,12 @@ class Application:
             "daemon_sftp": daemon_sftp,
             "daemon_listen": daemon_listen
         }
-        return request('POST', self.url + 'nodes', data=dumps(payload), headers=self.headers).json()
 
-    def update_node(
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nodes'
+            return await (await session.post(url, data=dumps(payload))).json()
+
+    async def update_node(
             self,
             name: str,
             location_id: int,
@@ -141,101 +188,121 @@ class Application:
             "daemon_sftp": daemon_sftp,
             "daemon_listen": daemon_listen
         }
-        return request('PATCH', self.url + 'nodes', data=dumps(payload), headers=self.headers).json()
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nodes'
+            return await (await session.patch(url, data=dumps(payload))).json()
 
-    def delete_node(self, node_id: int):
-        return request('DELETE', self.url + 'nodes/' + str(node_id), headers=self.headers)
+    # no aiohttp
+    async def delete_node(self, node_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nodes/' + str(node_id)
+            return await session.delete(url)
 
-    def get_node_allocations(self, node_id: int):
-        return request('GET', self.url + 'nodes/' + str(node_id) + '/allocations', headers=self.headers).json()
+    async def get_node_allocations(self, node_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nodes/' + str(node_id) + '/allocations'
+            return await (await session.get(url)).json()
 
     """
     Location endpoints
     """
-    def get_locations(self):
-        return request('GET', self.url + 'locations', headers=self.headers).json()
+    async def get_locations(self):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'locations'
+            return await (await session.get(url)).json()
 
-    def get_location(self, location_id: int):
-        return request('GET', self.url + 'locations/' + str(location_id), headers=self.headers).json()
+    async def get_location(self, location_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'locations/' + str(location_id)
+            return await (await session.get(url)).json()
 
-    def create_location(self, short: str, long: str = None):
+    async def create_location(self, short: str, long: str = None):
         payload = {"short": short}
 
         if long:
             payload['long'] = long
 
-        return request(
-            'POST', self.url + 'locations', data=dumps(payload), headers=self.headers
-        ).json()
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'locations'
+            return await (await session.post(url, data=dumps(payload))).json()
 
-    def update_location(self, location_id: int, short: str, long: str = None):
+    async def update_location(self, location_id: int, short: str, long: str = None):
         payload = {"short": short}
 
         if long:
             payload['long'] = long
 
-        return request(
-            'PATCH', self.url + 'locations/' + str(location_id), data=dumps(payload), headers=self.headers
-        ).json()
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'locations/' + str(location_id)
+            return await (await session.patch(url, data=dumps(payload))).json()
 
-    def delete_location(self, location_id: int):
-        return request('DELETE', self.url + 'locations/' + str(location_id), headers=self.headers)
+    async def delete_location(self, location_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'locations/' + str(location_id)
+            return await session.delete(url)
 
     """
     Database endpoints
     """
-    def get_server_databases(self, server_id: int):
-        return request('GET', self.url + 'servers/' + str(server_id) + '/databases', headers=self.headers).json()
+    async def get_server_databases(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/databases'
+            return await (await session.get(url)).json()
 
-    def get_server_database(self, server_id: int, database_id: int):
-        return request(
-            'GET', self.url + 'servers/' + str(server_id) + '/databases/' + str(database_id), headers=self.headers
-        )
+    async def get_server_database(self, server_id: int, database_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/databases/' + str(database_id)
+            return await (await session.get(url)).json()
 
     # not finished
-    def create_server_database(self, server_id: int, database_id: int):
+    async def create_server_database(self, server_id: int, database_id: int):
         payload = {}
         return
 
-    def reset_server_database(self, server_id: int, database_id: int):
-        return request(
-            'POST',
-            self.url + 'servers/' + str(server_id) + '/databases/' + str(database_id) + '/reset-password',
-            headers=self.headers
-        )
+    async def reset_server_database(self, server_id: int, database_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/databases/' + str(database_id) + '/reset-password'
+            return await session.post(url)
 
-    def delete_server_database(self, server_id: int, database_id: int):
-        return request(
-            'DELETE', self.url + 'servers/' + str(server_id) + '/databases/' + str(database_id), headers=self.headers
-        )
+    async def delete_server_database(self, server_id: int, database_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/databases/' + str(database_id)
+            return await session.delete(url)
 
     """
     Server endpoints
     """
-    def get_servers(self):
-        return request('GET', self.url + 'servers', headers=self.headers).json()
+    async def get_servers(self):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers'
+            return await (await session.get(url)).json()
 
-    def get_server(self, server_id: int):
-        return request('GET', self.url + 'servers/' + str(server_id), headers=self.headers).json()
+    async def get_server(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id)
+            return await (await session.get(url)).json()
 
-    def get_server_external(self, external_id: str):
-        return request('GET', self.url + 'servers/external/' + external_id)
+    async def get_server_external(self, external_id: str):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/external/' + external_id
+            return await (await session.get(url)).json()
 
-    # not finished
-    def update_server_details(
+    # not finished no aiohttp
+    async def update_server_details(
             self, user_id: int, server_id: int, name: str, external_id: str = None, description: str = None
     ):
         payload = {}
-        return request(
-            'PATCH', self.url + 'servers/' + str(server_id) + '/details', data=dumps(payload), headers=self.headers
-        )
-
-    # not finished
-    def update_server_build(self):
+        # return request(
+        #     'PATCH', self.url + 'servers/' + str(server_id) + '/details', data=dumps(payload), headers=self.headers
+        # )
         return
 
     # not finished
-    def create_server(
+    async def update_server_build(self):
+        return
+
+    # not finished
+    async def create_server(
             self,
             user_id: int,
             name: str,
@@ -255,11 +322,12 @@ class Application:
             "startup": startup,
             "environment": environment,
             "limits": {
-                "memory": 1024,
+                "memory": 3072,
                 "swap": 0,
                 "disk": 1024,
                 "io": 500,
-                "cpu": 200
+                "cpu": 400,
+                "oom_disabled": False
             },
             "feature_limits": {
                 "databases": 0,
@@ -269,34 +337,54 @@ class Application:
                 "default": default_allocation
             }
         }
-        return request('POST', self.url + 'servers/', data=dumps(payload), headers=self.headers).json()
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/'
+            return await (await session.post(url, data=dumps(payload))).json()
 
-    def suspend_server(self, server_id: int):
-        return request('POST', self.url + 'servers/' + str(server_id) + '/suspend', headers=self.headers)
+    async def suspend_server(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/suspend'
+            return await session.post(url)
 
-    def unsuspend_server(self, server_id: int):
-        return request('POST', self.url + 'servers/' + str(server_id) + '/unsuspend', headers=self.headers)
+    async def unsuspend_server(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/unsuspend'
+            return await session.post(url)
 
-    def reinstall_server(self, server_id: int):
-        return request('POST', self.url + 'servers/' + str(server_id) + '/reinstall', headers=self.headers)
+    async def reinstall_server(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/reinstall'
+            return await session.post(url)
 
-    def delete_server(self, server_id: int):
-        return request('DELETE', self.url + 'servers/' + str(server_id), headers=self.headers)
+    async def delete_server(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id)
+            return await session.delete(url)
 
-    def force_delete_server(self, server_id: int):
-        return request('DELETE', self.url + 'servers/' + str(server_id) + '/force', headers=self.headers)
+    async def force_delete_server(self, server_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'servers/' + str(server_id) + '/force'
+            return await session.delete(url)
 
     """
     Nest endpoints
     """
-    def get_nests(self):
-        return request('GET', self.url + 'nests', headers=self.headers).json()
+    async def get_nests(self):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nests'
+            return await (await session.get(url)).json()
 
-    def get_nest(self, nest_id: int):
-        return request('GET', self.url + 'nests/' + str(nest_id), headers=self.headers).json()
+    async def get_nest(self, nest_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nests/' + str(nest_id)
+            return await (await session.get(url)).json()
 
-    def get_nest_eggs(self, nest_id: int):
-        return request('GET', self.url + 'nests/' + str(nest_id) + '/eggs', headers=self.headers).json()
+    async def get_nest_eggs(self, nest_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nests/' + str(nest_id) + '/eggs'
+            return await (await session.get(url)).json()
 
-    def get_nest_egg(self, nest_id: int, egg_id: int):
-        return request('GET', self.url + 'nests/' + str(nest_id) + '/eggs/' + str(egg_id), headers=self.headers).json()
+    async def get_nest_egg(self, nest_id: int, egg_id: int):
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            url = self.url + 'nests/' + str(nest_id) + '/eggs/' + str(egg_id)
+            return await (await session.get(url)).json()
