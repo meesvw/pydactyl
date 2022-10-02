@@ -1,4 +1,3 @@
-import asyncio
 import aiohttp
 from json import dumps
 
